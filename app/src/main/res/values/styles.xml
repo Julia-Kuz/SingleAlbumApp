@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Widget.AppTheme.PlayButton" parent="Widget.Material3.Button.TextButton.Icon">
+    <item name="icon">@drawable/ic_selector_play_pause</item>
+    <item name="android:checkable">true</item>
+    </style>
+
+</resources>
