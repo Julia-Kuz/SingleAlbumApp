@@ -44,17 +44,17 @@ class ViewHolder(
             oneAlbumName.text = albumName ?: ""
             oneTrackName.text = track.file
 
-            binding.playButton.setImageResource(R.drawable.ic_play_circle_24)
+            if (track.isPlaying) {
+                binding.playButton.setImageResource(R.drawable.ic_pause_circle_24)
+            } else {
+                binding.playButton.setImageResource(R.drawable.ic_play_circle_24)
+            }
 
             binding.playButton.setOnClickListener {
-                if (MainActivity.mediaObserver.player?.isPlaying == true) {
+                if (track.isPlaying) {
                     binding.playButton.setImageResource(R.drawable.ic_play_circle_24)
                 } else {
                     binding.playButton.setImageResource(R.drawable.ic_pause_circle_24)
-                }
-
-                MainActivity.mediaObserver.player?.setOnCompletionListener {
-                    binding.playButton.setImageResource(R.drawable.ic_play_circle_24)
                 }
 
                 onInteractionListener.play(track)

@@ -14,6 +14,10 @@ class AlbumViewModel: ViewModel() {
         MutableLiveData <Album>()
     }
 
+    val tracksEdited: MutableLiveData <List<Track>> by lazy {
+        MutableLiveData <List<Track>>()
+    }
+
     private val _error = SingleLiveEvent<Unit>()
     val error: LiveData<Unit> = _error
 

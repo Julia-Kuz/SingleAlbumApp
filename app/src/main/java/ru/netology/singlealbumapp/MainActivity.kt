@@ -9,10 +9,7 @@ import kotlin.properties.Delegates
 
 class MainActivity : AppCompatActivity() {
 
-    companion object {
-        val mediaObserver = MediaLifecycleObserver()
-    }
-    //private val mediaObserver = MediaLifecycleObserver()
+    private val mediaObserver = MediaLifecycleObserver()
 
     private val viewModel: AlbumViewModel by viewModels()
 
@@ -24,20 +21,33 @@ class MainActivity : AppCompatActivity() {
 
         lifecycle.addObserver(mediaObserver)
 
+
+
         fun playList(trackCurrent: Track) {
             val tracks = viewModel.album.value?.tracks
             if (tracks != null) {
+
                 for ((index, track) in tracks.withIndex()) {
                     if (trackCurrent.id == track.id) {
                         var position = index
                         var i = 0
                         mediaObserver.apply {
+                            viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = true
+                            viewModel.tracksEdited.value = viewModel.album.value?.tracks
+                            //viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = true
                             play(tracks[position + i].file)
                             player?.setOnCompletionListener {
+                                viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = false
+                                viewModel.tracksEdited.value = viewModel.album.value?.tracks
+                                //viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = false
                                 i++
                                 if ((i + position) < tracks.size) {
                                     stop()
+                                    viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = true
+                                    viewModel.tracksEdited.value = viewModel.album.value?.tracks
+                                    //viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = true
                                     play(tracks[position + i].file)
+
                                 } else {
                                     stop()
                                     playList (tracks[0])
@@ -49,22 +59,31 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        var trackId by Delegates.notNull<Int>()
+        var trackId = -1
 
         val adapter = Adapter(object : OnInteractionListener {
             override fun play(track: Track) {
                 val thisTrackId = track.id
                 if (mediaObserver.player?.isPlaying == true) {
                     mediaObserver.apply {
+                        viewModel.album.value?.tracks?.find { it == track }?.isPlaying = false
+                        viewModel.tracksEdited.value = viewModel.album.value?.tracks
+                        //viewModel.album.value?.tracks?.find { it == track }?.isPlaying = false
                         stop()
                         if (thisTrackId != trackId) {
                             trackId = thisTrackId
+                            viewModel.album.value?.tracks?.find { it == track }?.isPlaying = true
+                            viewModel.tracksEdited.value = viewModel.album.value?.tracks
+                            //viewModel.album.value?.tracks?.find { it == track }?.isPlaying = true
                             playList(track)
                         }
                     }
                 } else {
                     mediaObserver.apply {
                         trackId = thisTrackId
+                        viewModel.album.value?.tracks?.find { it == track }?.isPlaying = true
+                        viewModel.tracksEdited.value = viewModel.album.value?.tracks
+                        //viewModel.album.value?.tracks?.find { it == track }?.isPlaying = true
                         playList(track)
                     }
                 }
@@ -84,6 +103,10 @@ class MainActivity : AppCompatActivity() {
 
             Adapter.albumName = album.title
             adapter.submitList(album.tracks)
+        }
+
+        viewModel.tracksEdited.observe(this) {
+            adapter.submitList(it)
         }
 
         viewModel.error.observe(this) {
