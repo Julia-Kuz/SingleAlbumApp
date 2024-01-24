@@ -5,7 +5,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import ru.netology.singlealbumapp.databinding.ActivityMainBinding
-import kotlin.properties.Delegates
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,32 +20,25 @@ class MainActivity : AppCompatActivity() {
 
         lifecycle.addObserver(mediaObserver)
 
-
-
         fun playList(trackCurrent: Track) {
-            val tracks = viewModel.album.value?.tracks
+            val tracks = viewModel.album.value?.copy()?.tracks
             if (tracks != null) {
-
                 for ((index, track) in tracks.withIndex()) {
                     if (trackCurrent.id == track.id) {
-                        var position = index
                         var i = 0
                         mediaObserver.apply {
-                            viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = true
-                            viewModel.tracksEdited.value = viewModel.album.value?.tracks
-                            //viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = true
-                            play(tracks[position + i].file)
+                            viewModel.editTrackTrue(tracks.find { it == tracks[index + i] })
+                            viewModel.editAlbumTrue()
+                            tracks[index + i].file?.let { play(it) }
                             player?.setOnCompletionListener {
-                                viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = false
-                                viewModel.tracksEdited.value = viewModel.album.value?.tracks
-                                //viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = false
+                                viewModel.editTrackFalse(tracks.find { it == tracks[index + i] })
+                                viewModel.editAlbumFalse()
                                 i++
-                                if ((i + position) < tracks.size) {
+                                if ((i + index) < tracks.size) {
                                     stop()
-                                    viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = true
-                                    viewModel.tracksEdited.value = viewModel.album.value?.tracks
-                                    //viewModel.album.value?.tracks?.find { it == tracks[position + i] }?.isPlaying = true
-                                    play(tracks[position + i].file)
+                                    viewModel.editTrackTrue(tracks.find { it == tracks[index + i] })
+                                    viewModel.editAlbumTrue()
+                                    tracks[index + i].file?.let { it1 -> play(it1) }
 
                                 } else {
                                     stop()
@@ -66,24 +58,24 @@ class MainActivity : AppCompatActivity() {
                 val thisTrackId = track.id
                 if (mediaObserver.player?.isPlaying == true) {
                     mediaObserver.apply {
-                        viewModel.album.value?.tracks?.find { it == track }?.isPlaying = false
-                        viewModel.tracksEdited.value = viewModel.album.value?.tracks
-                        //viewModel.album.value?.tracks?.find { it == track }?.isPlaying = false
+                        viewModel.editTrackFalse(track)
+                        viewModel.allStop()
                         stop()
-                        if (thisTrackId != trackId) {
-                            trackId = thisTrackId
-                            viewModel.album.value?.tracks?.find { it == track }?.isPlaying = true
-                            viewModel.tracksEdited.value = viewModel.album.value?.tracks
-                            //viewModel.album.value?.tracks?.find { it == track }?.isPlaying = true
+                        if (thisTrackId != trackId ) {
+                            if (thisTrackId != null) {
+                                trackId = thisTrackId
+                            }
+                            viewModel.editTrackTrue(track)
                             playList(track)
                         }
                     }
                 } else {
                     mediaObserver.apply {
-                        trackId = thisTrackId
-                        viewModel.album.value?.tracks?.find { it == track }?.isPlaying = true
-                        viewModel.tracksEdited.value = viewModel.album.value?.tracks
-                        //viewModel.album.value?.tracks?.find { it == track }?.isPlaying = true
+                        if (thisTrackId != null) {
+                            trackId = thisTrackId
+                        }
+                        viewModel.editTrackTrue(track)
+                        viewModel.editAlbumTrue()
                         playList(track)
                     }
                 }
@@ -101,12 +93,12 @@ class MainActivity : AppCompatActivity() {
                 genre.text = album.genre
             }
 
+            if (album.isAlbumPlaying) {
+                binding.playList.setImageResource(R.drawable.ic_pause_circle_48)
+            } else binding.playList.setImageResource(R.drawable.ic_play_circle_48)
+
             Adapter.albumName = album.title
             adapter.submitList(album.tracks)
-        }
-
-        viewModel.tracksEdited.observe(this) {
-            adapter.submitList(it)
         }
 
         viewModel.error.observe(this) {
@@ -118,13 +110,11 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
 
-
-        binding.playList.setImageResource(R.drawable.ic_play_circle_48)
-
         binding.playList.setOnClickListener {
             if (mediaObserver.player?.isPlaying == true) {
                 binding.playList.setImageResource(R.drawable.ic_play_circle_48)
                 mediaObserver.stop()
+                viewModel.allStop()
             } else {
                 val tracks = viewModel.album.value?.tracks
                 if (tracks != null) {
